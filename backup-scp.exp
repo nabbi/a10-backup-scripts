@@ -1,0 +1,75 @@
+#!/usr/bin/expect
+# copyright.c.2021.nic@boet.cc
+
+log_user 0
+set timeout 20
+
+set debug 0
+set trace 0
+set path [file dirname [file normalize [info script]]]
+
+source $path/inc/config.tcl
+source $path/inc/common-proc.exp
+
+## manual command example
+#
+#a10-Active#backup system use-mgmt-port scp://user@10.0.0.1:/home/user/a10.tar.gz
+#Password []?
+#Do you want to save the remote host information to a profile for later use?[yes/no]no
+#System files backup succeeded
+#a10-Active#
+
+if {[llength $argv] != 1} {
+	puts "A10: scp backup configurations\n"
+	puts "Usage: $argv0  <hostname>"
+	exit 64
+} 
+
+set hostname [lindex $argv 0];
+set prompt "$hostname*"
+
+
+#dns resolution is not functional on the shared partition, results in error:
+#Backend Error: Failed to backup system files
+#resolve our local hostname to the real ip address and pass the in the cli
+set scp_server [exec /usr/bin/dig -4 +short $config(scp_host)]
+
+set scp_file "$config(scp_path)/$hostname.tar.gz"
+
+
+#ping host, proc will exit
+if { [myalive $hostname] } {
+    if {$debug} { puts "## icmp reachable" }
+}
+
+#spawn ssh
+source $path/inc/ssh-init.exp
+
+
+
+if {$debug} { puts "## saving config" }
+## make sure we are on the shared part
+set part ""
+send "active-partition shared\r"
+expect -nocase "$prompt#"
+#save config
+send "write memory all\n"
+expect -nocase "$prompt#"
+
+if {$trace} {puts "## remote-url scp://$config(scp_user)@$scp_server:$scp_file" }
+send "backup system use-mgmt-port scp://$config(scp_user)@$scp_server:$scp_file\r"
+myexpect "Password []?"
+
+send "$config(scp_pass)\r"
+myexpect "Do you want to save the remote host information to a profile for later use?"
+
+send "no\r"
+myexpect "System files backup succeeded"
+
+
+#############################################
+
+# logoff
+source $path/inc/ssh-close.exp
+
+exit 0

@@ -1,0 +1,147 @@
+#!/usr/bin/expect
+# copyright.c.2021.nic@boet.cc
+
+log_user 0
+set timeout 20
+
+set debug 0
+set trace 0
+
+set path [file dirname [file normalize [info script]]]
+source $path/inc/config.tcl
+source $path/inc/common-proc.exp
+
+if { ( [llength $argv] != 2 )  } {
+	puts "A10: show running and aflex configurations\n"
+	puts "Usage: $argv0  <hostname> <saved-config-file>"
+	exit 64
+}
+
+set hostname [lindex $argv 0]
+
+set output [lindex $argv 1]
+file delete $output
+
+set prompt "$hostname-*"
+
+
+#ping host, proc will exit
+if { [myalive $hostname] } {
+    if {$debug} { puts "## icmp reachable" }
+}
+
+#spawn ssh
+source $path/inc/ssh-init.exp
+
+
+#############################################
+
+#
+# detect partitions - append the default "shared"
+#
+#show partition
+#Total Number of active partitions:      2
+#Total partitions allowed:               127
+#Partition Name   Id     App Type   Admin Count
+#---------------------------------------------
+#ssli_in          1      -          0
+#ssli_out         2      -          0
+##
+send "show partition\r"
+#buffer was not retruning expected output while using the myexec function.
+expect "$prompt#"
+set lines [split $expect_out(buffer) "\n"]
+set partition "shared"
+foreach l $lines {
+    if { $trace } { puts "line:$l" }
+    #set a mark point for the dashes
+    if { [info exists marked] } {
+	    #exit if we are detect cli prompt
+	    if { [regexp "^$hostname.*" $l] } {
+	        break
+	    }
+    	set result [lindex [split $l] 0]
+		lappend partition $result
+    }
+    #once this section is found the aflex script names should be present
+    if {[regexp {^----} $l]} {
+        set marked 1
+    }
+
+}
+
+
+#loop each part
+foreach p $partition {
+
+    #switch into the selected partition
+    send "active-partition $p\r"
+    myexpect "$prompt#"
+
+    log_file $output
+    send "show running-config\r"
+    ## the running config dumps strings which match our myexec error handling.
+    expect "$prompt#"
+    log_file
+    
+    #
+    # loop aflex scripts
+    #
+    ##show aflex
+    #Total aFlex number: 2
+    #Max aFlex file size: 32K
+    #Name                                             Syntax   Virtual port
+    #------------------------------------------------------------
+    #foo                                              Check    Bind
+    #bar                                              Check    No
+    ##
+    send "show aflex\r"
+    expect "$prompt#"
+    set lines [split $expect_out(buffer) "\n"]
+
+    #clear the marked tracker
+    if { [info exists marked] } {
+        unset marked
+    }
+    foreach l $lines {
+        if { $trace } { puts "line:$l" }
+        #set a mark point for the dashes
+        if { [info exists marked] } {
+            #exit if we are detect cli prompt
+            if { [regexp "^$hostname.*" $l] } {
+                break
+            }
+        set aflex [lindex [split $l] 0]
+        log_file $output
+        send "show aflex $aflex\r"
+        expect {
+            timeout {
+                send_user "\n## Timeout occured. Did not get the expected prompt!\n"
+                exit 1
+            }
+            "No such aFleX." {
+                send_user "\n## AFLEX detection failed.\n"
+                exit 1
+            }
+            "$prompt#"
+        }
+        log_file
+        }
+        #once this section is found the aflex script names should be present
+        if {[regexp {^----} $l]} {
+            set marked 1
+        }
+        
+    }
+    
+
+}
+
+
+
+#############################################
+
+# logoff
+source $path/inc/ssh-close.exp
+
+exit 0

@@ -1,0 +1,88 @@
+# copyright.c.2021.nic@boet.cc
+
+# this is probally not wise, combining all a10 cli error checking into on place.
+# we check for error conditions for commands which would not even generate these resposnes
+# an error is an error
+proc myexpect {p} {
+
+	expect {
+		#protect our coding below from being at the incorrect cmd prompt level
+		timeout {
+			send_user "\n## Timeout occured. Did not get the expected prompt!\n"
+			exit 1
+		}
+        #protect against incorrect object-group types
+		"This field cannot be modified at runtime" {
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+		#protect against incorrect partition selection
+		"Partition*does not exist" {
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+		#protect aganist incorrect commands or syntax issues
+		"Unrecognized command" {
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+		#protect against invalid list type configurations
+		#the input validations we do should already prevent, this condition was discovered from manual shell session
+		"Type incompatible with existing object-group type" {
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+		#WARN against the removal of a non-existant string from class-list
+		"Field value does not match" {
+			send_user "\n## Did you attempt to delete a record which was not present!?\n"
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 65
+		}
+		#WARN against the removal of non-existant network from object-group
+		"No such clause configured for this object group." {
+			send_user "\n## Did you attempt to delete a record which was not present!?\n"
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 65
+		}
+	
+		#unknown errors?
+		-nocase "error" {
+			send_user "\n## unknown error\n"
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+		#unknown invalid?
+		-nocase "invalid" {
+			send_user "\n## unknown invalid\n"
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+		#unknown fail?
+		-nocase "fail" {
+			send_user "\n## unknown fail\n"
+			send_user "\n## Failure detected.\n$expect_out(buffer)\n## Terminating.\n"
+			exit 1
+		}
+
+		#else just presume the cmd worked and we got the expected 
+		-nocase $p
+
+	}
+}
+
+# do an icmp check first. This gives better error reporting
+proc myalive {hostname} {
+	spawn /usr/sbin/fping $hostname
+	expect {
+		"alive" {return 1}
+		"unreachable" {
+			send_user "\nUnable to ping $hostname. Terminating.\n"
+			exit 68
+		}
+		"Name or service not known" {
+			send_user "\nUnable to resolve $hostname. Terminating.\n"
+			exit 68
+		}
+	}
+	exit
+}

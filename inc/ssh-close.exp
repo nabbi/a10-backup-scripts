@@ -1,0 +1,12 @@
+# copyright.c.2021.nic@boet.cc
+
+# a10 logoff
+send "exit\r"
+myexpect "$prompt>"
+
+send "exit\r"
+myexpect "Are you sure to quit"
+
+send "Y\r"
+expect eof
+

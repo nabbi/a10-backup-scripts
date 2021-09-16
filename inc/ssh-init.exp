@@ -1,0 +1,46 @@
+# copyright.c.2021.nic@boet.cc
+
+# the spawn need to be in the main code so use this as an insert to mimize code duplication
+
+# ssh to host
+if {$debug} { puts "## opening ssh to $hostname" }
+spawn ssh -q -o StrictHostKeyChecking=no $config(username)@$hostname
+
+# password prompt
+expect {
+    timeout { send_user "\nFailed to get password prompt\n"; exit 1 }
+    eof { send_user "\nSSH failure for $hostname\n"; exit 1 }
+    "Password:"
+}
+send "$config(password)\r"
+
+
+expect {
+
+    "$prompt>" {
+        send "enable\r"
+        expect "Password:"
+
+        send "$config(enable)\r"
+        expect {
+            timeout {
+                send_user "\nEnable Failed.\n"
+                exit 77
+            }
+            -nocase "$prompt#"
+        }
+    }
+    timeout {
+        send_user "\nLogin failed. Password incorrect.\n"
+        exit 77
+    }
+    -nocase "$prompt#"
+}
+
+
+
+
+#disable terminal paging
+send "terminal length 0\r"
+myexpect "$prompt#"
+
