@@ -38,8 +38,8 @@ If you do want to commit these into the repo then the run.sh needs to be adjuste
 
 # config
 
-Two files need to be reviewed
-- ./inc/config.tcl needs to be defined with device creds
+Two files need to be touched
+- ./inc/config.tcl needs to be defined with device creds from config.example.tcl 
 - ./run-a10-config-backups.sh needs the hostname list of a10 appliances to backup
 
 
