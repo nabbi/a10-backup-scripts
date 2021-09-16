@@ -32,8 +32,8 @@ create git repo
 > git init ~/a10-configs
 
 Optionally create .gitignore to not track tar exports.
-If you do want to commit these into the repo then the run.sh needs to be adjusted
-> echp "*.tar.gz" >> ~/a10-configs/.gitignore
+If you do want to commit these into the repo then the run.sh needs to be adjusted too
+> echo "*.tar.gz" >> ~/a10-configs/.gitignore
 
 
 # config
