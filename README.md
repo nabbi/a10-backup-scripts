@@ -25,7 +25,7 @@ Requires TCL Expect and BASH, and the following packages
 
 YMMV, should just need to initialize a new repo and maybe fiddle with the paths to suit your needs
 
-> git clone SRC ~/a10-backup-scripts
+> git clone https://github.com/nabbi/a10-backup-scripts ~/a10-backup-scripts
 
 create git repo
 > mkdir ~/a10-configs
