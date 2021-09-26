@@ -25,16 +25,21 @@ Requires TCL Expect and BASH, and the following packages
 
 YMMV, should just need to initialize a new repo and maybe fiddle with the paths to suit your needs
 
-> git clone https://github.com/nabbi/a10-backup-scripts ~/a10-backup-scripts
+```
+git clone https://github.com/nabbi/a10-backup-scripts ~/a10-backup-scripts
+```
 
 create git repo
-> mkdir ~/a10-configs
-> git init ~/a10-configs
+```
+mkdir ~/a10-configs
+git init ~/a10-configs
+```
 
 Optionally create .gitignore to not track tar exports.
 If you do want to commit these into the repo then the run.sh needs to be adjusted too
-> echo "*.tar.gz" >> ~/a10-configs/.gitignore
-
+```
+echo "*.tar.gz" >> ~/a10-configs/.gitignore
+```
 
 # config
 
@@ -46,5 +51,7 @@ Two files need to be touched
 # crontab
 
 I run these just before midnight for a daily rollup of config changes.
-> 45 23 * * * ~/a10-backup-scripts/run-a10-config-backups.sh  > /dev/null 2>&1
+```
+45 23 * * * ~/a10-backup-scripts/run-a10-config-backups.sh  > /dev/null 2>&1
+```
 
