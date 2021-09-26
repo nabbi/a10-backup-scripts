@@ -63,7 +63,7 @@ foreach l $lines {
     	set result [lindex [split $l] 0]
 		lappend partition $result
     }
-    #once this section is found the aflex script names should be present
+    #once this section is found the partition names should be present
     if {[regexp {^----} $l]} {
         set marked 1
     }
