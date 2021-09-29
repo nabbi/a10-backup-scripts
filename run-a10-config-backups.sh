@@ -1,5 +1,5 @@
 #!/bin/bash
-# copyright.c.2021.nic@boet.cc
+# nic@boet.cc
 # this proccess exports the running configs and saves locally
 
 # define which hosts we need backups from
